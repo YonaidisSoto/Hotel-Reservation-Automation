@@ -1,0 +1,269 @@
+{
+  "name": "Hotel Reservation Automation",
+  "nodes": [
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e01",
+      "name": "Run Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-1600, 800],
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e02",
+      "name": "Read Reservations",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-1344, 800],
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservations", "mode": "name" },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e03",
+      "name": "Pending Reservations",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [-1088, 560],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            { "id": "cond_pending", "leftValue": "={{ $json.Status }}", "rightValue": "Pending", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e04",
+      "name": "Sync with Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [-832, 560],
+      "parameters": {
+        "resource": "event",
+        "operation": "update",
+        "calendar": { "__rl": true, "value": "your-calendar-email@gmail.com", "mode": "list", "cachedResultName": "your-calendar-email@gmail.com" },
+        "eventId": "={{ $json.Google_Event_ID }}",
+        "updateFields": {
+          "description": "=Reservation CONFIRMED - {{ $json.Guest_Name }} - {{ $json.Room_Type }}"
+        }
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e05",
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [-576, 560],
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Hotel",
+        "remoteJid": "={{ $json.Guest_Phone }}@s.whatsapp.net",
+        "messageText": "=Hi {{ $json.Guest_Name }}! 🏨 Your reservation at *[HOTEL_NAME]* is confirmed:\n\n📅 Check-in: {{ $json.Check_In }}\n📅 Check-out: {{ $json.Check_Out }}\n🛏️ Room: {{ $json.Room_Type }}\n\nWe look forward to welcoming you! If you need anything, just reply to this WhatsApp.",
+        "options_message": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e06",
+      "name": "Mark as Confirmed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-320, 560],
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservations", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "ID": "={{ $json.ID }}", "Status": "Confirmed" },
+          "matchingColumns": ["ID"],
+          "schema": [
+            { "id": "ID", "displayName": "ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Google_Event_ID", "displayName": "Google_Event_ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Name", "displayName": "Guest_Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Phone", "displayName": "Guest_Phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Booking_Date", "displayName": "Booking_Date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_In", "displayName": "Check_In", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_Out", "displayName": "Check_Out", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Room_Type", "displayName": "Room_Type", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Notes", "displayName": "Notes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Created_At", "displayName": "Created_At", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Reminder_Sent", "displayName": "Reminder_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Followup_Sent", "displayName": "Followup_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e07",
+      "name": "Needs Reminder",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [-1088, 800],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            { "id": "cond_r1", "leftValue": "={{ $json.Status }}", "rightValue": "Confirmed", "operator": { "type": "string", "operation": "equals" } },
+            { "id": "cond_r2", "leftValue": "={{ $json.Check_In }}", "rightValue": "={{ $now.plus({ days: 1 }).toFormat('dd/MM/yyyy') }}", "operator": { "type": "string", "operation": "equals" } },
+            { "id": "cond_r3", "leftValue": "={{ $json.Reminder_Sent }}", "rightValue": "", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e08",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [-832, 800],
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Hotel",
+        "remoteJid": "={{ $json.Guest_Phone }}@s.whatsapp.net",
+        "messageText": "=Hi {{ $json.Guest_Name }}! 👋 Just a reminder that *tomorrow ({{ $json.Check_In }})* is your check-in at [HOTEL_NAME] (from 3:00 PM). We're getting everything ready for you! 🏨✨",
+        "options_message": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e09",
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-576, 800],
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservations", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "ID": "={{ $json.ID }}", "Reminder_Sent": "true" },
+          "matchingColumns": ["ID"],
+          "schema": [
+            { "id": "ID", "displayName": "ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Google_Event_ID", "displayName": "Google_Event_ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Name", "displayName": "Guest_Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Phone", "displayName": "Guest_Phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Booking_Date", "displayName": "Booking_Date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_In", "displayName": "Check_In", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_Out", "displayName": "Check_Out", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Room_Type", "displayName": "Room_Type", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Notes", "displayName": "Notes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Created_At", "displayName": "Created_At", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Reminder_Sent", "displayName": "Reminder_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Followup_Sent", "displayName": "Followup_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e10",
+      "name": "Needs Follow-up",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [-1088, 1040],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            { "id": "cond_s1", "leftValue": "={{ $json.Status }}", "rightValue": "Confirmed", "operator": { "type": "string", "operation": "equals" } },
+            { "id": "cond_s2", "leftValue": "={{ $json.Check_Out }}", "rightValue": "={{ $now.minus({ days: 1 }).toFormat('dd/MM/yyyy') }}", "operator": { "type": "string", "operation": "equals" } },
+            { "id": "cond_s3", "leftValue": "={{ $json.Followup_Sent }}", "rightValue": "", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e11",
+      "name": "Send Follow-up",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [-832, 1040],
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "Hotel",
+        "remoteJid": "={{ $json.Guest_Phone }}@s.whatsapp.net",
+        "messageText": "=Hi {{ $json.Guest_Name }}! Thank you for staying with us at [HOTEL_NAME] 🙏 We hope you enjoyed your stay. We'd love to hear your feedback — would you leave us a review? 🌟 [REVIEW_LINK]",
+        "options_message": {}
+      }
+    },
+    {
+      "id": "d1e1a1c0-1a2b-4c3d-8e4f-1a2b3c4d7e12",
+      "name": "Mark Follow-up Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-576, 1040],
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "Reservations", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "ID": "={{ $json.ID }}", "Followup_Sent": "true", "Status": "Completed" },
+          "matchingColumns": ["ID"],
+          "schema": [
+            { "id": "ID", "displayName": "ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Google_Event_ID", "displayName": "Google_Event_ID", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Name", "displayName": "Guest_Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Guest_Phone", "displayName": "Guest_Phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Booking_Date", "displayName": "Booking_Date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_In", "displayName": "Check_In", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Check_Out", "displayName": "Check_Out", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Room_Type", "displayName": "Room_Type", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Notes", "displayName": "Notes", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Created_At", "displayName": "Created_At", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Reminder_Sent", "displayName": "Reminder_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Followup_Sent", "displayName": "Followup_Sent", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Run Every Hour": { "main": [[{ "node": "Read Reservations", "type": "main", "index": 0 }]] },
+    "Read Reservations": {
+      "main": [
+        [
+          { "node": "Pending Reservations", "type": "main", "index": 0 },
+          { "node": "Needs Reminder", "type": "main", "index": 0 },
+          { "node": "Needs Follow-up", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Pending Reservations": { "main": [[{ "node": "Sync with Calendar", "type": "main", "index": 0 }]] },
+    "Sync with Calendar": { "main": [[{ "node": "Send Confirmation", "type": "main", "index": 0 }]] },
+    "Send Confirmation": { "main": [[{ "node": "Mark as Confirmed", "type": "main", "index": 0 }]] },
+    "Needs Reminder": { "main": [[{ "node": "Send Reminder", "type": "main", "index": 0 }]] },
+    "Send Reminder": { "main": [[{ "node": "Mark Reminder Sent", "type": "main", "index": 0 }]] },
+    "Needs Follow-up": { "main": [[{ "node": "Send Follow-up", "type": "main", "index": 0 }]] },
+    "Send Follow-up": { "main": [[{ "node": "Mark Follow-up Sent", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
